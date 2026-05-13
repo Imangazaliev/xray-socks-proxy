@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+<%
+function shellQuote(value) {
+  return `'${String(value).replaceAll("'", "'\"'\"'")}'`
+}
+%>
+
+proxy_host="127.0.0.1"
+proxy_port="<%= proxy.port %>"
+proxy_url="socks5h://${proxy_host}:${proxy_port}"
+direct_ip="$(curl --fail --silent --show-error https://ipinfo.io/ip)"
+
+<% if (auth.username && auth.password) { %>
+proxy_user=<%- shellQuote(auth.username) %>
+proxy_pass=<%- shellQuote(auth.password) %>
+proxied_info="$(curl --fail --silent --show-error --proxy "${proxy_url}" --proxy-user "${proxy_user}:${proxy_pass}" https://ipinfo.io/json)"
+<% } else { %>
+proxied_info="$(curl --fail --silent --show-error --proxy "${proxy_url}" https://ipinfo.io/json)"
+<% } %>
+
+cat <<EOF
+direct_ip=${direct_ip}
+proxy_url=socks5://${proxy_host}:${proxy_port}
+proxied_info=${proxied_info}
+EOF

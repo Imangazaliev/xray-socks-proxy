@@ -1,0 +1,20 @@
+services:
+  xray-proxy-client:
+    image: teddysun/xray
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'awk ''$4 == "0A" && $2 ~ /:<%= proxy.port.toString(16).toUpperCase().padStart(4, "0") %>$/ { found = 1 } END { exit(found ? 0 : 1) }'' /proc/net/tcp /proc/net/tcp6'
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 3s
+    volumes:
+      - ./xray-config.json:/etc/xray/config.json
+    ports:
+      - "<%= proxy.port %>:<%= proxy.port %>"
+
+networks:
+  default:
+    name: xray-socks-proxy
